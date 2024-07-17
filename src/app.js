@@ -1,6 +1,6 @@
-import express from "express"
-import cors from "cors"
-import cookieParser from "cookie-Parser"  //** iska kaam h, ki mere server se user ka browser h uske ander ki cookie ko eccess kar pau , or cookie set kar pau ..means CRUD operation perform kar pau !!
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser"; // Corrected the typo
 
 const app = express()
 
@@ -22,6 +22,30 @@ app.use(cookieParser())
 
 
 
+// routes
+// alag se isliye , segrigate kar rhe chijo ko takii easily manageable ho !! 
+
+import userRouter from "./routes/user.routes.js"
+
+
+
+//routes declaration
+// app.get ... nhi likh sakte yha, chuki chijo ko segrigate kar diye isliye ab hmko middleare lana padega  (app.use(...ab iske andar routes or sare routes likh sakte ))
+app.use("/api/v1/users",userRouter);   // yha '/users' ek prefix ki tarah use hoga !! ab URL banega --> http://locahost:3000/api/v1/users
+
+
+
+
+// catching all route -[fro debugging ]
+
+// app.use((req, res, next) => {
+//     console.log(`Request received at: ${req.url}`);
+//     next();
+// });
+
+// app.use((req, res) => {
+//     res.status(404).send("Route not found");
+// });
 
 
 
