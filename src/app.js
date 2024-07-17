@@ -36,7 +36,7 @@ app.use("/api/v1/users",userRouter);   // yha '/users' ek prefix ki tarah use ho
 
 
 
-// catching all route -[fro debugging ]
+// catching all route -[for debugging ]
 
 // app.use((req, res, next) => {
 //     console.log(`Request received at: ${req.url}`);
