@@ -333,6 +333,8 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
         throw new ApiError(400, "Avatar file is missing");
     }
 
+    //TODO: delete old image - assignment
+
     const avatar = await uploadOnCloudinary(avatarLocalPath);
 
     if(!avatar.url){
@@ -392,6 +394,87 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
 
 })
 
+
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    
+    const {username}= req.params;
+
+    if(!username?.trim()){
+        throw new ApiError(400, "username is missing");
+    }
+
+    // await User.find({username})   // app database se user loge, phir uske _id ke besis pe aggrigation lagaoge , but aap direct aggrigation laga sakte MATCH se
+
+    const channel = await User.aggregate([
+        {
+            $match:{
+                username: username?.toLowerCase()    // yha pe apne filter kar liye document, ab mere pass ek document , ab muzhe lookup karna h ex:chaiorcode
+            }
+        },
+        {    // ab us chaiorcode ke kitne subscriber h, usko pta karne ke liye lookup ka use
+            $lookup: {
+                from: "subscriptions",    // always pural, all lowercase
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",    // always pural, all lowercase
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscriberedTo"
+            }
+        },
+        {
+            // ab inko add karna padega dono fields ko , or kuch alag se bhi add kar dega, 
+            $addFields:{
+                subscribersCount:{
+                    $size: "$subscribers"    // fields h to always '$'
+                },
+                channelSubscribedToCount:{
+                    $size: "$subscribedTo "
+                },
+                isSubscribed:{
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},   // $in se pta chega ki apke subscrbers me mera name h ki nhi!!!
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {   // m selected values ko hi project karunga !!
+                fullName: 1,
+                username: 1,
+                subscribersCount:1,
+                channelSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1,
+                email:1
+
+            }
+        }
+    ])    // agrrigate se return arrays hote !!
+
+    if(channel?.length){
+        throw new ApiError(404, "channel does not exist");
+    }
+    
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200,channel[0],"User channel fetched sucessfully")
+        )
+})
+
+
+
+
 export {
     registerUser, 
     loginUser ,
@@ -401,5 +484,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile
 }
