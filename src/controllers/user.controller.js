@@ -275,4 +275,131 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
     }
 })
 
-export {registerUser, loginUser , logoutUser , refreshAccessToken}
+
+
+const changeCurrentPassword = asyncHandler(async(req,res) =>{
+    const {oldPassword, newPassword} = req.body;
+
+    // change password karna h, means user login h phle se hi, to uski information hme 'req.user' se mil jayegi, becoz hmne middlware laga rhka !!
+    
+    const user = await User.findById(req.user?.id);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    if(!isPasswordCorrect){
+        throw new ApiError(400, "Invalid old password");
+    }
+
+    user.password = newPassword;  // set ho gya ,ab save kar dunga
+    await user.save({validateBeforeSave: false});
+    
+    return res.status(200)
+    .json(new ApiResponse(200,{},"Password changed successfully"));
+})
+
+const getCurrentUser = asyncHandler( async(req,res)=>{
+    return res
+    .status(200)
+    .json(200, req.user, "current user fetched successfully")
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    const {fullName, email} = req.body;
+    if(!fullName || !email){
+        throw new ApiError(400, "All fields are required");
+    }
+    
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {   // mongoDB ke operator yha laga sakte , SET, COUNT, MIN, etc....
+            $set:{
+                fullName,   // TODO: inconsisteny dur karo
+                email: email
+            }
+
+        },
+        {
+            new: true   // isme update hone ke baad jo info .. aati h usko return karta h,, isliye ab isko store bhi kar sakte !!   
+        }
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json( new ApiResponse(200, user, "Account details updated successfully"));
+
+});
+
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+    const avatarLocalPath = req.file?.path;   // multer middleware ke through mila file !!!
+    if(!avatarLocalPath){
+        throw new ApiError(400, "Avatar file is missing");
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar.url){
+        throw new ApiError(400, "Error while uploading avatar on cloudinary");
+    }
+ 
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avatar: avatar.url
+            }
+        },
+        {
+            new :true
+        }
+    ).select("-pasword")
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "avatar updated successfully")
+    )
+
+})
+
+
+const updateUserCoverImage = asyncHandler(async(req,res)=>{
+    const coverLocalPath = req.file?.path;   // multer middleware ke through mila file !!!
+    if(!coverLocalPath){
+        throw new ApiError(400, "cover Image file is missing");
+    }
+
+    const coverImage = await uploadOnCloudinary(coverLocalPath);
+
+    if(!coverImage.url){
+        throw new ApiError(400, "Error while uploading coverImage on cloudinary");
+    }
+ 
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage: coverImage.url
+            }
+        },
+        {
+            new :true
+        }
+    ).select("-pasword")
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "CoverImage updated successfully")
+    )
+
+})
+
+export {
+    registerUser, 
+    loginUser ,
+    logoutUser ,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
+}
