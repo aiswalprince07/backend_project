@@ -8,7 +8,6 @@ const asyncHandler = (reqHandler) => {
 // Error ka koi structure nhi h, to iska bhi utility bana lenge, jisse easy ho jayega !!
 
 
-
 export {asyncHandler}
 
 

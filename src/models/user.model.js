@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import mongoose, { Schema }from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 
-const UserSchema = new mongoose.Schema(
+const userSchema = new Schema(
   {
     username: {
       type: String,
@@ -23,7 +23,6 @@ const UserSchema = new mongoose.Schema(
     fullName:{
         type: String,
         required: true,
-        lowercase: true,
         trim: true,
         index:true
     },
@@ -34,11 +33,11 @@ const UserSchema = new mongoose.Schema(
     coverImage:{
         type: String,  //cloudinary url
     },
-    watchHistory:[
+   watchHistory: [
         {
-            type: Schema.type.objectId,
-            ref:"Video"
-        },
+            type: Schema.Types.ObjectId,
+            ref: "Video"
+        }
     ],
     password:{
         type: String,
@@ -53,8 +52,8 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-UserSchema.pre("save", async function (next){
-  // chiki , this ko sare values pata h, hook issi ko bolte h !!
+userSchema.pre("save", async function (next){
+  // chuki , this ko sare values pata h, hook issi ko bolte h !!
   // ab jab koi bhi change hoga to password to change ho jayega ek problem h ye !!, 
   // to jab agar password me modification h tabhi sirf ussi time chalna chahiye ye function !!!
 
@@ -65,29 +64,29 @@ UserSchema.pre("save", async function (next){
 })
 
 
-UserSchema.methods.isPasswordCorrect = async function(password){
+userSchema.methods.isPasswordCorrect = async function(password){
   return await bcrypt.compare(password, this.password)
 }
 
-UserSchema.methods.generateAccessToken = function(){
+userSchema.methods.generateAccessToken = function(){
   return jwt.sign(
     {   // payload
       _id:this._id,
       email: this.email,
-      username:this.username,
-      fullName:this.fullName
+      username: this.username,
+      fullName: this.fullName
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn:process.env.ACCESS_TOKEN_EXPIRY
+      expiresIn : process.env.ACCESS_TOKEN_EXPIRY
     }
   )
 }
 
-UserSchema.methods.generateRefreshToken = function(){
+userSchema.methods.generateRefreshToken = function(){
   return jwt.sign(
     {   // payload
-      _id:this._id
+      _id: this._id
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
@@ -95,4 +94,4 @@ UserSchema.methods.generateRefreshToken = function(){
     }
   )
 }
-export const User = mongoose.model("User", UserSchema);
+export const User = mongoose.model("User", userSchema);
